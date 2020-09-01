@@ -1,0 +1,22 @@
+---
+- hosts: np_kibana
+  #connection: local
+  become: True
+  tasks:
+     - name: Start kibana service, if not started
+       service: name=kibana state=started
+  
+     - name: Make sure kibana.pid exists 
+       find: 
+          paths: /var/run/kibana/kibana.pid 
+       register: kibanaPid
+
+     - name: create kibana/ if missing
+       file:
+          path: /var/run/kibana
+          state: directory
+          owner: kibana
+          group: kibana
+          mode: 0775
+       when: kibanaPid.stat.exists == false
+

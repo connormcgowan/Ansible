@@ -1,0 +1,21 @@
+---
+- hosts: np_elasticsearch
+  become: false
+  tasks:
+     - name: Include Vars
+       include_vars:
+          file: /etc/ansible/NP_playbooks/vars.yml
+          name: elasticpass
+          
+     - name: Check server health
+       command: curl -k -u elastic:"{{ elasticpass }}" https://localhost:9200/_cluster/health --cacert "/etc/elasticsearch/certs/DSG 2016 SHA2 Issuing CA1.cer"
+       register: response
+       
+     - name: Start Elasticsearch service, if not started
+       become: True
+       become_method: sudo
+       become_user: root
+       service: 
+          name: elasticsearch
+          state: started
+       when: response.stdout.find("\"green\"") == -1  

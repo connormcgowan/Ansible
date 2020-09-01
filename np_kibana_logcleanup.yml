@@ -1,0 +1,55 @@
+---
+- hosts: np_kibana
+  become: Yes
+  tasks:
+     - name: Check for inccorect log file
+       stat:
+          path: /var/log/kibana.log
+       register: stat_result
+     
+     - name: Archive current log file
+       archive: 
+          path: /var/log/
+          dest: /var/log/kibana/kibana-wronglog.log.gz
+          format: gz
+       when: stat_result.stat.exists == True 
+     
+     -name: Alert DSE of incorrect log file
+      mail:
+         host: localhost
+         port: 25
+         to: DSE@dcsg.com
+         subject: Incorrect Log File Exists in Kibana
+         body: Currently kibana log file exists in /var/log/kibana.log. Attached is a zipped version of the file. 
+         attach: /var/log/kibana/kibana-wronglog.log.gz
+      when: stat_result.stat.exists == True
+      
+     - name: Find current log
+       find:
+          paths: /var/log/kibana/kibana.log
+          file_type: file 
+         
+     - name: Archive current log file
+       archive: 
+          path: /var/log/kibana
+          dest: /var/log/kibana/kibana-{{ansible_date_time.date}}.log.gz
+          format: gz
+
+     - name: Clear old log file 
+       shell: ">kibana.log"
+       args:
+          chdir: /var/log/kibana
+          
+     - name: Find logfiles older than 21 days
+       find: 
+          paths: /var/log/kibana
+          patterns: '*.log.gz'
+          age: '21d'
+          file_type: file
+       register: filesOlderThan21d
+
+     - name: Clear old log archives
+       file: 
+          path: "{{ item.path }}"  
+          state: absent
+       with_items: "{{ filesOlderThan21d.files }}"

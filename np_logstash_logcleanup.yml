@@ -1,0 +1,30 @@
+---
+- hosts: np_logstash
+  serial: 1
+  become: Yes
+  tasks:
+     - name: Find logfiles older than X days
+       find: 
+          paths: /var/log/logstash
+          patterns: '*.log.gz'
+          age: '5d'
+       register: filesOlderThan5d
+      
+     - name: Clear log file 
+       file: 
+          path: "{{ item.path }}"
+          state: absent
+       with_items: "{{ filesOlderThan5d.files }}"
+
+     - name: Find messages older that X days
+       find: 
+          paths: /var/log
+          patterns: 'messages-*'
+          age: '7d'
+       register: msgOlderThan5d
+
+     - name: Clear message file 
+       file: 
+          path: "{{ item.path }}"
+          state: absent
+       with_items: "{{ msgOlderThan5d.files }}"

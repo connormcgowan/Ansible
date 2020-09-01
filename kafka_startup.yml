@@ -1,0 +1,13 @@
+---
+- hosts: np_kafka
+  become: True
+  tasks:
+     - name: Ping Server
+       ping:
+       
+     - name: Start kafka service, if not started
+       become: True
+       become_method: sudo
+       become_user: root
+       #zookeeper starts kafka service as well
+       service: name=zookeeper state=started

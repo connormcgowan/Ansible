@@ -1,0 +1,6 @@
+---
+- hosts: np_logstash
+  become: false
+  tasks:
+     - name: Start logstash service, if not started
+       service: name=logstash state=started
